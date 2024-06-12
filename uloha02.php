@@ -1,140 +1,106 @@
-<?php
-require_once "connect.php";
-?>
-
 <!DOCTYPE html>
-<html>
+<html lang="sk">
 <head>
-    <title>Úlohy</title>
-    <link rel="stylesheet" type="text/css" href="uloha02.css">
+    <meta charset="UTF-8">
+    <title>Úloha 02</title>
+    <link rel="stylesheet" href="uloha02.css">
 </head>
 <body>
+    <div class="container">
+        <?php
+        require_once "connect.php";
 
-<h1>požiadavka 01</h1>
-<?php
-// Fetch and display all orders from 1996 and their customers
-$sql = "SELECT Orders.OrderID, Customers.CompanyName FROM Orders 
-        JOIN Customers ON Orders.CustomerID = Customers.CustomerID 
-        WHERE YEAR(OrderDate) = 1996";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>Order ID</th><th>Customer Name</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['OrderID'] . "</td><td>" . $row['CompanyName'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+        function execute_query($conn, $sql, $header) {
+            $result = mysqli_query($conn, $sql);
+            if (!$result) {
+                echo "Error: " . mysqli_error($conn) . "<br>";
+                return;
+            }
 
-<h1>požiadavka 02</h1>
-<?php
-// Fetch and display the number of employees and customers from each city that has employees
-$sql = "SELECT City, COUNT(DISTINCT EmployeeID) as EmployeeCount, 
-        (SELECT COUNT(DISTINCT CustomerID) FROM Customers WHERE City = e.City) as CustomerCount 
-        FROM Employees e 
-        GROUP BY City";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>City</th><th>Employee Count</th><th>Customer Count</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['City'] . "</td><td>" . $row['EmployeeCount'] . "</td><td>" . $row['CustomerCount'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+            echo '<div class="table-container">';
+            echo "<h2>$header</h2>";
+            if (mysqli_num_rows($result) > 0) {
+                echo "<table>";
+                echo "<thead><tr>";
+                $fields = mysqli_fetch_fields($result);
+                foreach ($fields as $field) {
+                    echo "<th>" . $field->name . "</th>";
+                }
+                echo "</tr></thead><tbody>";
+                while ($row = mysqli_fetch_assoc($result)) {
+                    echo "<tr>";
+                    foreach ($row as $value) {
+                        echo "<td>" . $value . "</td>";
+                    }
+                    echo "</tr>";
+                }
+                echo "</tbody></table>";
+            } else {
+                echo "<p>No results found.</p>";
+            }
+            echo '</div>';
+        }
 
-<h1>požiadavka 03</h1>
-<?php
-// Fetch and display the number of employees and customers from each city that has customers
-$sql = "SELECT City, COUNT(DISTINCT CustomerID) as CustomerCount, 
-        (SELECT COUNT(DISTINCT EmployeeID) FROM Employees WHERE City = c.City) as EmployeeCount 
-        FROM Customers c 
-        GROUP BY City";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>City</th><th>Customer Count</th><th>Employee Count</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['City'] . "</td><td>" . $row['CustomerCount'] . "</td><td>" . $row['EmployeeCount'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+     
+        echo "<h1>požiadavka 01</h1>";
+        $sql = "SELECT o.OrderID, o.CustomerID, c.CompanyName
+                FROM orders o
+                INNER JOIN customers c ON o.CustomerID = c.CustomerID
+                WHERE YEAR(o.OrderDate) = 1996";
+        execute_query($conn, $sql, "Prehľad pre všetky objednávky z roku 1996 a ich zákazníkov");
 
-<h1>požiadavka 04</h1>
-<?php
-// Fetch and display the number of employees and customers from each city
-$sql = "SELECT City, 
-        (SELECT COUNT(DISTINCT EmployeeID) FROM Employees WHERE City = c.City) as EmployeeCount, 
-        COUNT(DISTINCT CustomerID) as CustomerCount 
-        FROM Customers c 
-        GROUP BY City";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>City</th><th>Employee Count</th><th>Customer Count</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['City'] . "</td><td>" . $row['EmployeeCount'] . "</td><td>" . $row['CustomerCount'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+       
+        echo "<h1>požiadavka 02</h1>";
+        $sql = "SELECT e.City, COUNT(DISTINCT e.EmployeeID) AS EmployeeCount, COUNT(DISTINCT c.CustomerID) AS CustomerCount
+                FROM employees e
+                INNER JOIN customers c ON e.City = c.City
+                GROUP BY e.City";
+        execute_query($conn, $sql, "Počet zamestnancov a zákazníkov z každého mesta, ktoré má zamestnancov");
 
-<h1>požiadavka 05</h1>
-<?php
-// Fetch and display order IDs and related employee names for orders sent after a specific date
-$requiredDate = '1995-01-01';
-$sql = "SELECT Orders.OrderID, Employees.FirstName, Employees.LastName FROM Orders 
-        JOIN Employees ON Orders.EmployeeID = Employees.EmployeeID 
-        WHERE ShippedDate > '$requiredDate'";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>Order ID</th><th>Employee Name</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['OrderID'] . "</td><td>" . $row['FirstName'] . " " . $row['LastName'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+     
+        echo "<h1>požiadavka 03</h1>";
+        $sql = "SELECT c.City, COUNT(DISTINCT e.EmployeeID) AS EmployeeCount, COUNT(DISTINCT c.CustomerID) AS CustomerCount
+                FROM customers c
+                LEFT JOIN employees e ON c.City = e.City
+                GROUP BY c.City";
+        execute_query($conn, $sql, "Počet zamestnancov a zákazníkov z každého mesta, ktoré má zákazníkov");
 
-<h1>požiadavka 06</h1>
-<?php
-// Fetch and display total quantity of products ordered where quantity is less than 200
-$sql = "SELECT ProductID, SUM(Quantity) as TotalQuantity FROM `Order Details` 
-        GROUP BY ProductID HAVING SUM(Quantity) < 200";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>Product ID</th><th>Total Quantity</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['ProductID'] . "</td><td>" . $row['TotalQuantity'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
-?>
+       
+        echo "<h1>požiadavka 04</h1>";
+        $sql = "SELECT City, COUNT(DISTINCT EmployeeID) AS EmployeeCount, COUNT(DISTINCT CustomerID) AS CustomerCount
+                FROM (SELECT City, EmployeeID, NULL AS CustomerID FROM employees
+                      UNION ALL
+                      SELECT City, NULL AS EmployeeID, CustomerID FROM customers) AS combined
+                GROUP BY City";
+        execute_query($conn, $sql, "Počet zamestnancov a zákazníkov z každého mesta");
 
-<h1>požiadavka 07</h1>
-<?php
-// Fetch and display the total number of orders per customer since December 31, 1994, where total orders are greater than 15
-$sql = "SELECT Customers.CustomerID, Customers.CompanyName, COUNT(Orders.OrderID) as TotalOrders FROM Orders 
-        JOIN Customers ON Orders.CustomerID = Customers.CustomerID 
-        WHERE OrderDate > '1994-12-31' 
-        GROUP BY Customers.CustomerID HAVING COUNT(Orders.OrderID) > 15";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table>";
-    echo "<thead><tr><th>Customer ID</th><th>Company Name</th><th>Total Orders</th></tr></thead><tbody>";
-    while($row = $result->fetch_assoc()) {
-        echo "<tr><td>" . $row['CustomerID'] . "</td><td>" . $row['CompanyName'] . "</td><td>" . $row['TotalOrders'] . "</td></tr>";
-    }
-    echo "</tbody></table>";
-}
+        
+        echo "<h1>požiadavka 05</h1>";
+        $sql = "SELECT o.OrderID, e.FirstName, e.LastName
+                FROM orders o
+                INNER JOIN employees e ON o.EmployeeID = e.EmployeeID
+                WHERE o.ShippedDate > '1996-12-31'";
+        execute_query($conn, $sql, "ID objednávok a súvisiace mená zamestnancov pre objednávky, ktoré boli odoslané po 1996-12-31");
 
-$conn->close();
-?>
+    
+        echo "<h1>požiadavka 06</h1>";
+        $sql = "SELECT ProductID, SUM(Quantity) AS TotalQuantity
+                FROM `order details`
+                WHERE Quantity < 200
+                GROUP BY ProductID";
+        execute_query($conn, $sql, "Celkové množstvo objednaných produktov (menej ako 200)");
 
+        
+        echo "<h1>požiadavka 07</h1>";
+        $sql = "SELECT CustomerID, COUNT(*) AS TotalOrders
+                FROM orders
+                WHERE OrderDate >= '1996-12-31'
+                GROUP BY CustomerID
+                HAVING COUNT(*) > 15";
+        execute_query($conn, $sql, "Celkový počet objednávok podľa zákazníka od 31. decembra 1996 (Objednávky > 15)");
+
+        mysqli_close($conn);
+        ?>
+    </div>
 </body>
 </html>
